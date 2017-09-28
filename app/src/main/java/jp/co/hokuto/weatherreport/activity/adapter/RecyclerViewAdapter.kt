@@ -1,18 +1,21 @@
 package jp.co.hokuto.weatherreport.activity.adapter
 
-import android.graphics.Bitmap
+import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import jp.co.hokuto.weatherreport.R
+import jp.co.hokuto.weatherreport.activity.data.ImageData
 
 
 /**
- * Created by Sano on 2017/09/06.
+ * RecyclerViewAdapter
+ *
+ * Created by 佐野 on 2017/09/06.
  */
-class RecyclerViewAdapter(val items: ArrayList<Bitmap>) : RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
+class RecyclerViewAdapter(val items: ArrayList<ImageData>) : RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
 		val v: View = LayoutInflater.from(parent.context).inflate(R.layout.list_item, parent, false)
@@ -22,7 +25,8 @@ class RecyclerViewAdapter(val items: ArrayList<Bitmap>) : RecyclerView.Adapter<R
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-		holder.imageView.setImageBitmap(items[position])
+		holder.imageView.setImageBitmap(items[position].imageBitmap)
+		holder.cardView.setCardBackgroundColor(items[position].imageColor)
     }
 
     override fun getItemCount(): Int {
@@ -30,10 +34,7 @@ class RecyclerViewAdapter(val items: ArrayList<Bitmap>) : RecyclerView.Adapter<R
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imageView: ImageView = view.findViewById(R.id.list_item_image) as ImageView
-
-        companion object Factory {
-            fun create(v: ImageView): ViewHolder = ViewHolder(v)
-        }
+		val cardView : CardView = view.findViewById(R.id.card_view) as CardView
+		val imageView : ImageView = view.findViewById(R.id.list_item_image) as ImageView
     }
 }

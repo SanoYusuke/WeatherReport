@@ -1,8 +1,11 @@
 package jp.co.hokuto.weatherreport.activity.fragment
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v4.widget.SwipeRefreshLayout
+import android.support.v7.graphics.Palette
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -12,6 +15,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import jp.co.hokuto.weatherreport.R
 import jp.co.hokuto.weatherreport.activity.adapter.RecyclerViewAdapter
+import jp.co.hokuto.weatherreport.activity.data.ImageData
 import jp.co.hokuto.weatherreport.activity.listener.RecyclerItemClickListener
 import jp.co.tecotec.wizard.connect.ImageFileDownloadTask
 
@@ -25,10 +29,12 @@ import jp.co.tecotec.wizard.connect.ImageFileDownloadTask
 class MainFragment : Fragment() {
 
 	private var mUrlList : ArrayList<String> = ArrayList()
-	private var mImageList : ArrayList<Bitmap> = ArrayList()
+	private var mImageList : ArrayList<ImageData> = ArrayList()
 
 	private var mRecyclerView : RecyclerView ?= null
 	private var mLayoutManager: RecyclerView.LayoutManager? = null
+
+	private var mSwipeRefresh : SwipeRefreshLayout ?= null
 
 	companion object {
 		val FRAGMENT_NAME: String = MainFragment::class.java.name
@@ -41,15 +47,21 @@ class MainFragment : Fragment() {
 	override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 		val view = inflater?.inflate(R.layout.fragment_main, container, false)
 
+		// RecyclerViewの取得
 		mRecyclerView = view?.findViewById(R.id.recycler_view) as RecyclerView
 		mLayoutManager = LinearLayoutManager(activity.applicationContext)
 		mRecyclerView?.layoutManager = mLayoutManager
-
 		mRecyclerView?.addOnItemTouchListener(RecyclerItemClickListener(activity.applicationContext, object : RecyclerItemClickListener.OnItemClickListener {
 			override fun onItemClick(view: View, position: Int) {
 				Toast.makeText(activity.applicationContext, "number = " + position, Toast.LENGTH_SHORT).show()
 			}
 		}))
+
+		// SwipeRefreshの取得
+		mSwipeRefresh = view.findViewById(R.id.swipe_refresh) as SwipeRefreshLayout
+		mSwipeRefresh?.setOnRefreshListener {
+			loadData()
+		}
 
 		return view
 	}
@@ -63,19 +75,7 @@ class MainFragment : Fragment() {
 	override fun onStart() {
 		super.onStart()
 
-//		for (i in 0..) {
-//			mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2016/09/summon_20161010_w2rbia.jpg")
-//		}
-		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2016/09/summon_20161010_w2rbia.jpg")
-		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/2017summer02_npl3q/summon_banner.png")
-		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/2017summer_b0p2k/summon_banner.png")
-		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/prisma_illya_nk6tn/summon_banner.png")
-		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/kyoumafu2017_c8trc/top_banner.png")
-
-		for (url in mUrlList) {
-			connectImageFileDownload(url)
-		}
-
+		loadData()
 	}
 
 
@@ -86,6 +86,26 @@ class MainFragment : Fragment() {
 
 	override fun onDestroy() {
 		super.onDestroy()
+	}
+
+
+	private fun loadData() {
+		mUrlList.clear()
+
+		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2016/09/summon_20161010_w2rbia.jpg")
+		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/2017summer02_npl3q/summon_banner.png")
+		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/2017summer_b0p2k/summon_banner.png")
+		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/prisma_illya_nk6tn/summon_banner.png")
+		mUrlList.add("http://news.fate-go.jp/wp-content/uploads/2017/kyoumafu2017_c8trc/top_banner.png")
+
+		for (url in mUrlList) {
+			connectImageFileDownload(url)
+		}
+
+		// 更新完了
+		if (mSwipeRefresh?.isRefreshing == true) {
+			mSwipeRefresh?.isRefreshing = false
+		}
 	}
 
 
@@ -107,7 +127,14 @@ class MainFragment : Fragment() {
 					return
 				}
 
-				mImageList.add(result)
+				// 画像ファイルから代表色を抽出する
+				val palette : Palette = Palette.from(result).generate()
+
+				val imageData : ImageData = ImageData()
+				imageData.imageBitmap = result
+				imageData.imageColor = palette.lightVibrantSwatch?.rgb ?:Color.WHITE
+
+				mImageList.add(imageData)
 
 				Log.d("test", "(DEBUG)通信完了 = " + result)
 
